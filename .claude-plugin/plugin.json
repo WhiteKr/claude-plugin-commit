@@ -7,5 +7,5 @@
     "email": "white_kr@icloud.com"
   },
   "license": "MIT",
-  "keywords": ["git", "commit", "atomic-commits", "hunk", "staging"]
+  "keywords": ["git", "commit", "hunk", "staging"]
 }

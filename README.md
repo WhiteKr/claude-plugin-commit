@@ -2,6 +2,13 @@
 
 논리적으로 응집된 단위로만 git commit을 만드는 워크플로우 스킬. 한 commit = 한 의도.
 
+## 설치
+
+```
+/plugin marketplace add WhiteKr/whitekr-claude-plugins
+/plugin install commit@whitekr-claude-plugins
+```
+
 ## 사용
 
 ```
