@@ -1,7 +1,6 @@
 ---
 name: commit
 description: 'Atomic hunk-level git commit workflow. This is the ONLY way to create git commits — never use raw git commit commands without invoking this skill first. Trigger whenever: the user says "commit", "커밋", "변경사항 저장", "커밋해줘", or /commit; the user asks to save/stage/prepare changes; OR you are about to create a git commit as part of any workflow (including plan execution, subagent-driven development, or automated pipelines). Even if a plan document contains commit steps, this skill overrides those instructions.'
-user_invocable: true
 model: sonnet
 effort: medium
 ---
