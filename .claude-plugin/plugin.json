@@ -7,10 +7,6 @@
     "email": "white_kr@icloud.com"
   },
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/WhiteKr/whitekr-claude-plugins.git",
-    "directory": "plugins/commit"
-  },
+  "repository": "https://github.com/WhiteKr/whitekr-claude-plugins.git",
   "keywords": ["git", "commit", "hunk", "staging"]
 }
