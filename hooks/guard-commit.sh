@@ -5,9 +5,9 @@
 # 모델이 임의로 실행하는 raw `git commit` 을 차단하고, 커밋은 사용자가 직접
 # `/commit` 으로 실행하도록 안내한다.
 #
-# 사용자가 `/commit` 으로 스킬을 실행하면 스킬이 commit 명령 앞에 sentinel
-# (CLAUDE_COMMIT_SKILL=1) 을 붙인다. 그 sentinel 이 명령 문자열에 있으면 이
-# 가드를 통과한다 — 스킬 자신의 commit 도 같은 Bash 도구를 거치므로 bypass 가 필수다.
+# bypass: commit 명령 조각 맨 앞에 prefix (CLAUDE_SKILL_COMMIT=1) 가 붙어 있으면
+# 통과시킨다. /commit 스킬은 자신의 commit 에 이 prefix 를 붙여 가드를 지난다 —
+# 스킬 자신의 commit 도 같은 Bash 도구를 거치므로 bypass 가 필수다.
 #
 # 한계: 사용자가 `!git commit ...` (bang 셸 모드) 로 직접 친 명령은 모델의 도구
 # 호출이 아니므로 이 hook 이 발동하지 않는다. 그건 사용자 본인의 직접 실행이라
@@ -40,13 +40,13 @@ commit_re='(^|[^[:alnum:]._/-])git([[:space:]]+(-[^[:space:]]+|-[Cc][[:space:]]+
 
 # 명령을 셸 구분자(&&, ||, ;, |, &, 개행)로 조각낸 뒤, git commit 을 담은 조각이
 # 하나라도 sentinel 로 시작하지 않으면 차단한다. sentinel 은 자기 조각의 commit
-# 만 인가하므로 `cd x && CLAUDE_COMMIT_SKILL=1 git commit` 은 통과하고,
-# `CLAUDE_COMMIT_SKILL=1 git commit && git commit` 의 두 번째 commit 은 막는다.
+# 만 인가하므로 `cd x && CLAUDE_SKILL_COMMIT=1 git commit` 은 통과하고,
+# `CLAUDE_SKILL_COMMIT=1 git commit && git commit` 의 두 번째 commit 은 막는다.
 # sentinel 이 조각 맨 앞이 아니면 인가 안 되므로 인자에 심는 우회도 막힌다.
 if printf '%s' "$command_str" \
   | sed -E 's/(\|\||&&|[;|&])/\n/g' \
   | grep -E "$commit_re" \
-  | grep -qvE '^[[:space:]]*CLAUDE_COMMIT_SKILL=1([[:space:]]|$)'; then
+  | grep -qvE '^[[:space:]]*CLAUDE_SKILL_COMMIT=1([[:space:]]|$)'; then
   # 차단 + 안내
   cat <<'JSON'
 {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"git commit 은 사용자가 직접 /commit 으로 실행하는 워크플로우입니다. 모델이 임의로 커밋하지 않습니다. 지금 변경을 커밋하지 말고, 무엇을 커밋할지 한두 줄로 요약한 뒤 사용자에게 '/commit' 입력을 안내하세요."}}

@@ -27,6 +27,6 @@
 
 모델이 `/commit` 을 거치지 않고 임의로 `git commit` 을 실행하려 하면, PreToolUse hook(`hooks/guard-commit.sh`)이 이를 차단하고 변경 요약 후 사용자에게 `/commit` 입력을 안내하도록 모델을 되돌립니다. 커밋 거버넌스를 사용자 트리거 전용으로 강제하는 장치입니다.
 
-- 스킬이 `/commit` 으로 실행하는 commit 은 명령에 sentinel(`CLAUDE_COMMIT_SKILL=1`)을 붙여 가드를 통과합니다.
+- `/commit` 스킬은 commit 명령에 bypass prefix(`CLAUDE_SKILL_COMMIT=1`)를 붙여 가드를 통과합니다. 이 훅을 피해야 하면 commit 명령 맨 앞에 같은 prefix 를 붙이면 됩니다.
 - hook 은 stdin JSON 파싱에 `jq` 를 사용합니다. `jq` 가 없으면 가드는 통과(no-op)합니다.
 - **한계**: 사용자가 `!git commit ...`(bang 셸 모드)로 직접 친 명령은 모델의 도구 호출이 아니므로 hook 이 발동하지 않습니다. 이는 사용자 본인의 직접 실행이라 차단 대상이 아닙니다.

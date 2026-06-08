@@ -18,7 +18,7 @@ argument-hint: '[<target>]'
 - **Co-Authored-By 라인 포함 금지.**
 - 메시지 스타일/분리 단위는 아래 가드를 따른다 (최근 log 톤보다 우선).
 - **사용자 판단이 필요한 지점은 선택지로**: 그룹 포함 여부·언어·분리 방식처럼 사용자가 결정해야 하는 분기는 열린 질문으로 묻지 말고, 그 시점에 사용 가능한 선택형 상호작용 도구를 적극 활용해 서로 구분되는 선택지를 제시하고 고르게 한다. 정해진 기본값이 있으면 먼저 적용하고 애매할 때만 묻는다.
-- **commit 명령은 `CLAUDE_COMMIT_SKILL=1` prefix 로 실행** (절차 5 참고) — 가드 hook 을 통과하기 위한 sentinel.
+- **commit 명령은 `CLAUDE_SKILL_COMMIT=1` prefix 로 실행** (절차 5 참고) — 가드 hook 을 통과하기 위한 sentinel.
 
 ## 절차
 
@@ -28,7 +28,7 @@ argument-hint: '[<target>]'
    - 새 파일이거나 파일 전체가 한 의도면 `git add <file>`.
    - 한 파일에 여러 의도가 섞여 hunk 를 갈라야 하면 `git diff <file>` 출력에서 **포함할 `@@` 블록만 남긴 패치**를 만들어 `git apply --cached <patch>` 로 적용한다. (`printf 'y\n...' | git add -p` 의 고정 응답 시퀀스는 쓰지 않는다 — `git add -p` 의 프롬프트 수/종류는 상황에 따라 달라져, 고정 응답이 어긋나면 조용히 틀린 hunk 가 staged 된다.)
 4. `git diff --cached` 로 staged 내용을 hunk 단위로 검증한다 (`--stat` 은 파일 단위라 hunk 단위 오류를 못 잡는다). 의도와 다르면 `git reset HEAD` 후 재시도.
-5. `CLAUDE_COMMIT_SKILL=1 git commit -m "..."` 으로 commit. **`CLAUDE_COMMIT_SKILL=1` prefix 는 이 플러그인 가드 hook 을 통과하기 위한 필수 sentinel** — 빼면 자신의 commit 이 차단된다.
+5. `CLAUDE_SKILL_COMMIT=1 git commit -m "..."` 으로 commit. **`CLAUDE_SKILL_COMMIT=1` prefix 는 이 플러그인 가드 hook 을 통과하기 위한 필수 sentinel** — 빼면 자신의 commit 이 차단된다.
 6. Commit 후 `git status` 로 잔여 변경 확인. 남았다면 추가 commit 을 진행할지 여기서 마칠지 선택지로 물어본다.
 
 ## 메시지 스타일
