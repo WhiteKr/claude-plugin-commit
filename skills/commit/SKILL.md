@@ -4,6 +4,7 @@ description: 'Atomic hunk-level git commit workflow, run by the user via /commit
 disable-model-invocation: true
 model: sonnet
 effort: medium
+argument-hint: '[<target>]'
 ---
 
 # Atomic Hunk-Level Commit
@@ -22,7 +23,7 @@ effort: medium
 ## 절차
 
 1. `git status` / `git diff` / `git log --oneline -10` 를 병렬 실행.
-2. tracked 변경의 `git diff` hunk 들과 `git status` 의 untracked 파일을 의도 기준으로 그룹핑. 각 그룹 요약을 선택지로 제시하고 이번 commit 에 포함할 그룹을 사용자가 고르게 한다 (여러 그룹 동시 선택 가능).
+2. tracked 변경의 `git diff` hunk 들과 `git status` 의 untracked 파일을 의도 기준으로 그룹핑. `$ARGUMENTS` 가 주어지면 그것을 이번 commit 대상의 자연어 기술로 보고 부합하는 그룹(들)을 골라 진행한다 (어느 그룹을 가리키는지 모호하면 선택지로 확인). 인자가 없으면 각 그룹 요약을 선택지로 제시하고 이번 commit 에 포함할 그룹을 사용자가 고르게 한다 (여러 그룹 동시 선택 가능).
 3. 선택된 그룹을 staging:
    - 새 파일이거나 파일 전체가 한 의도면 `git add <file>`.
    - 한 파일에 여러 의도가 섞여 hunk 를 갈라야 하면 `git diff <file>` 출력에서 **포함할 `@@` 블록만 남긴 패치**를 만들어 `git apply --cached <patch>` 로 적용한다. (`printf 'y\n...' | git add -p` 의 고정 응답 시퀀스는 쓰지 않는다 — `git add -p` 의 프롬프트 수/종류는 상황에 따라 달라져, 고정 응답이 어긋나면 조용히 틀린 hunk 가 staged 된다.)
