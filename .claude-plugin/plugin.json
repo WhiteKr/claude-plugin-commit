@@ -1,6 +1,6 @@
 {
   "name": "commit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Atomic, hunk-level git commits — one commit per intent, with message guards that follow your repository's existing language and conventions",
   "author": {
     "name": "WhiteKr",
