@@ -12,22 +12,23 @@ effort: medium
 
 ## 원칙
 
-- **Default: hunk-level staging** (`git add -p`). 한 파일 안에 서로 다른 의도의 변경이 섞여 있을 때 필수.
+- **Default: hunk-level staging**. 한 파일 안에 서로 다른 의도의 변경이 섞여 있을 때 필수 — 갈라야 할 땐 `git apply --cached` 로 원하는 hunk 만 담은 패치를 적용한다 (절차 3).
 - **File-level 허용**: 새 파일 생성, 또는 파일 안의 모든 hunk가 동일 의도일 때만 `git add <file>` 사용.
 - **Co-Authored-By 라인 포함 금지.**
 - 메시지 스타일/분리 단위는 아래 가드를 따른다 (최근 log 톤보다 우선).
 - **사용자 판단이 필요한 지점은 선택지로**: 그룹 포함 여부·언어·분리 방식처럼 사용자가 결정해야 하는 분기는 열린 질문으로 묻지 말고 서로 구분되는 선택지를 제시해 고르게 한다. 정해진 기본값이 있으면 먼저 적용하고 애매할 때만 묻는다.
-- **commit 명령은 `CLAUDE_COMMIT_SKILL=1` prefix 로 실행** (절차 6 참고) — 가드 hook 을 통과하기 위한 sentinel.
+- **commit 명령은 `CLAUDE_COMMIT_SKILL=1` prefix 로 실행** (절차 5 참고) — 가드 hook 을 통과하기 위한 sentinel.
 
 ## 절차
 
 1. `git status` / `git diff` / `git log --oneline -10` 를 병렬 실행.
-2. diff hunk 들을 의도 기준으로 그룹핑. 각 그룹 요약을 선택지로 제시하고 이번 commit 에 포함할 그룹을 사용자가 고르게 한다 (여러 그룹 동시 선택 가능).
-3. Untracked 파일이 그룹에 포함되면 `git add -N <file>` 로 intent-to-add 등록.
-4. **Hunk 시퀀스 작성 시: `git diff` 출력 순서를 먼저 확인하고 각 응답이 어떤 hunk에 매핑되는지 정확히 매기고 나서** `printf 'y\ny\nn\n...' | git add -p <file>`. 시퀀스가 hunk 순서와 어긋나면 잘못된 hunk 가 staged 됨.
-5. `git diff --cached --stat` 로 검증. 의도와 다르면 `git reset HEAD` 후 재시도.
-6. `CLAUDE_COMMIT_SKILL=1 git commit -m "..."` 으로 commit. **`CLAUDE_COMMIT_SKILL=1` prefix 는 이 플러그인 가드 hook 을 통과하기 위한 필수 sentinel** — 빼면 자신의 commit 이 차단된다.
-7. Commit 후 `git status` 로 잔여 변경 확인. 남았다면 추가 commit 을 진행할지 여기서 마칠지 선택지로 물어본다.
+2. tracked 변경의 `git diff` hunk 들과 `git status` 의 untracked 파일을 의도 기준으로 그룹핑. 각 그룹 요약을 선택지로 제시하고 이번 commit 에 포함할 그룹을 사용자가 고르게 한다 (여러 그룹 동시 선택 가능).
+3. 선택된 그룹을 staging:
+   - 새 파일이거나 파일 전체가 한 의도면 `git add <file>`.
+   - 한 파일에 여러 의도가 섞여 hunk 를 갈라야 하면 `git diff <file>` 출력에서 **포함할 `@@` 블록만 남긴 패치**를 만들어 `git apply --cached <patch>` 로 적용한다. (`printf 'y\n...' | git add -p` 의 고정 응답 시퀀스는 쓰지 않는다 — `git add -p` 의 프롬프트 수/종류는 상황에 따라 달라져, 고정 응답이 어긋나면 조용히 틀린 hunk 가 staged 된다.)
+4. `git diff --cached` 로 staged 내용을 hunk 단위로 검증한다 (`--stat` 은 파일 단위라 hunk 단위 오류를 못 잡는다). 의도와 다르면 `git reset HEAD` 후 재시도.
+5. `CLAUDE_COMMIT_SKILL=1 git commit -m "..."` 으로 commit. **`CLAUDE_COMMIT_SKILL=1` prefix 는 이 플러그인 가드 hook 을 통과하기 위한 필수 sentinel** — 빼면 자신의 commit 이 차단된다.
+6. Commit 후 `git status` 로 잔여 변경 확인. 남았다면 추가 commit 을 진행할지 여기서 마칠지 선택지로 물어본다.
 
 ## 메시지 스타일
 
