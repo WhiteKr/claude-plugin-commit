@@ -1,6 +1,7 @@
 ---
 name: commit
-description: 'Atomic hunk-level git commit workflow. This is the ONLY way to create git commits — never use raw git commit commands without invoking this skill first. Trigger whenever: the user says "commit", "커밋", "변경사항 저장", "커밋해줘", or /commit; the user asks to save/stage/prepare changes; OR you are about to create a git commit as part of any workflow (including plan execution, subagent-driven development, or automated pipelines). Even if a plan document contains commit steps, this skill overrides those instructions.'
+description: 'Atomic hunk-level git commit workflow, run by the user via /commit. Stages hunk-by-hunk so one commit equals one intent, and writes messages following the repository''s existing language and conventions.'
+disable-model-invocation: true
 model: sonnet
 effort: medium
 ---
@@ -16,6 +17,7 @@ effort: medium
 - **Co-Authored-By 라인 포함 금지.**
 - 메시지 스타일/분리 단위는 아래 가드를 따른다 (최근 log 톤보다 우선).
 - **사용자 판단이 필요한 지점은 선택지로**: 그룹 포함 여부·언어·분리 방식처럼 사용자가 결정해야 하는 분기는 열린 질문으로 묻지 말고 서로 구분되는 선택지를 제시해 고르게 한다. 정해진 기본값이 있으면 먼저 적용하고 애매할 때만 묻는다.
+- **commit 명령은 `CLAUDE_COMMIT_SKILL=1` prefix 로 실행** (절차 6 참고) — 가드 hook 을 통과하기 위한 sentinel.
 
 ## 절차
 
@@ -24,7 +26,8 @@ effort: medium
 3. Untracked 파일이 그룹에 포함되면 `git add -N <file>` 로 intent-to-add 등록.
 4. **Hunk 시퀀스 작성 시: `git diff` 출력 순서를 먼저 확인하고 각 응답이 어떤 hunk에 매핑되는지 정확히 매기고 나서** `printf 'y\ny\nn\n...' | git add -p <file>`. 시퀀스가 hunk 순서와 어긋나면 잘못된 hunk 가 staged 됨.
 5. `git diff --cached --stat` 로 검증. 의도와 다르면 `git reset HEAD` 후 재시도.
-6. Commit 후 `git status` 로 잔여 변경 확인. 남았다면 추가 commit 을 진행할지 여기서 마칠지 선택지로 물어본다.
+6. `CLAUDE_COMMIT_SKILL=1 git commit -m "..."` 으로 commit. **`CLAUDE_COMMIT_SKILL=1` prefix 는 이 플러그인 가드 hook 을 통과하기 위한 필수 sentinel** — 빼면 자신의 commit 이 차단된다.
+7. Commit 후 `git status` 로 잔여 변경 확인. 남았다면 추가 commit 을 진행할지 여기서 마칠지 선택지로 물어본다.
 
 ## 메시지 스타일
 

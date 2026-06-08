@@ -1,0 +1,16 @@
+{
+  "description": "모델의 raw git commit 을 차단하고 커밋을 사용자 트리거(/commit) 전용으로 강제하는 가드",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-commit.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}
