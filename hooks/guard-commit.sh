@@ -32,20 +32,21 @@ fi
 
 command_str=$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null || printf '')
 
-# 스킬이 주입한 sentinel 이 있으면 통과 (스킬 자신의 commit).
-# 앞쪽 앵커 필수: `git commit -m "CLAUDE_COMMIT_SKILL=1"` 처럼 인자 안에
-# 심어 우회하는 것을 막는다.
-case $command_str in
-  CLAUDE_COMMIT_SKILL=1\ *|CLAUDE_COMMIT_SKILL=1) exit 0 ;;
-esac
-
 # git commit 계열 탐지: `git` 다음에 옵션(-m, --amend, -C <path> 등)을 거쳐
 # `commit` 서브커맨드가 오는 경우. compound 명령(`cd x && git commit`)도 잡는다.
 # `git log --grep=commit` 처럼 commit 이 인자로 붙은 경우는 commit 앞이 공백이
 # 아니라 제외된다. `git commit-tree` 같은 plumbing 은 commit 뒤가 `-` 라 제외된다.
 commit_re='(^|[^[:alnum:]._/-])git([[:space:]]+(-[^[:space:]]+|-[Cc][[:space:]]+[^[:space:]]+))*[[:space:]]+commit([[:space:]]|;|&|\||$)'
 
-if printf '%s' "$command_str" | grep -qE "$commit_re"; then
+# 명령을 셸 구분자(&&, ||, ;, |, &, 개행)로 조각낸 뒤, git commit 을 담은 조각이
+# 하나라도 sentinel 로 시작하지 않으면 차단한다. sentinel 은 자기 조각의 commit
+# 만 인가하므로 `cd x && CLAUDE_COMMIT_SKILL=1 git commit` 은 통과하고,
+# `CLAUDE_COMMIT_SKILL=1 git commit && git commit` 의 두 번째 commit 은 막는다.
+# sentinel 이 조각 맨 앞이 아니면 인가 안 되므로 인자에 심는 우회도 막힌다.
+if printf '%s' "$command_str" \
+  | sed -E 's/(\|\||&&|[;|&])/\n/g' \
+  | grep -E "$commit_re" \
+  | grep -qvE '^[[:space:]]*CLAUDE_COMMIT_SKILL=1([[:space:]]|$)'; then
   # 차단 + 안내
   cat <<'JSON'
 {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"git commit 은 사용자가 직접 /commit 으로 실행하는 워크플로우입니다. 모델이 임의로 커밋하지 않습니다. 지금 변경을 커밋하지 말고, 무엇을 커밋할지 한두 줄로 요약한 뒤 사용자에게 '/commit' 입력을 안내하세요."}}
