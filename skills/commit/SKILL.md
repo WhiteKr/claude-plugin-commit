@@ -22,8 +22,8 @@ argument-hint: '[<target>]'
 
 ## 절차
 
-1. `git status` / `git diff` / `git log --oneline -10` 를 병렬 실행.
-2. tracked 변경의 `git diff` hunk 들과 `git status` 의 untracked 파일을 의도 기준으로 그룹핑. `$ARGUMENTS` 가 주어지면 그것을 이번 commit 대상의 자연어 기술로 보고 부합하는 그룹(들)을 골라 진행한다 (어느 그룹을 가리키는지 모호하면 선택지로 확인). 인자가 없으면 각 그룹 요약을 선택지로 제시하고 이번 commit 에 포함할 그룹을 사용자가 고르게 한다 (여러 그룹 동시 선택 가능).
+1. `git status` / `git diff` / `git log --oneline -10` 를 병렬 실행. 단, `$ARGUMENTS` 가 경로(실재하는 파일/디렉토리, 또는 명백한 경로/glob 형태)로 판단되면 `git status` 와 `git diff` 를 그 경로로 스코프한다 (`git status -- <path>`, `git diff -- <path>`) — 무관한 변경의 diff 가 컨텍스트에 실리지 않게 한다.
+2. tracked 변경의 `git diff` hunk 들과 `git status` 의 untracked 파일을 의도 기준으로 그룹핑. `$ARGUMENTS` 가 경로면 절차 1 에서 이미 그 경로로 스코프됐으므로 스코프된 변경만 그룹핑한다. 경로가 아닌 자연어 기술이면 그것을 이번 commit 대상의 기술로 보고 부합하는 그룹(들)을 골라 진행한다 (어느 그룹을 가리키는지 모호하면 선택지로 확인). 인자가 없으면 각 그룹 요약을 선택지로 제시하고 이번 commit 에 포함할 그룹을 사용자가 고르게 한다 (여러 그룹 동시 선택 가능).
 3. 선택된 그룹을 staging:
    - 새 파일이거나 파일 전체가 한 의도면 `git add <file>`.
    - 한 파일에 여러 의도가 섞여 hunk 를 갈라야 하면 `git diff <file>` 출력에서 **포함할 `@@` 블록만 남긴 패치**를 만들어 `git apply --cached <patch>` 로 적용한다. (`printf 'y\n...' | git add -p` 의 고정 응답 시퀀스는 쓰지 않는다 — `git add -p` 의 프롬프트 수/종류는 상황에 따라 달라져, 고정 응답이 어긋나면 조용히 틀린 hunk 가 staged 된다.)
