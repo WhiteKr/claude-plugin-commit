@@ -18,7 +18,7 @@ argument-hint: '[<target>]'
 - **Co-Authored-By 라인 포함 금지.**
 - 메시지 스타일/분리 단위는 아래 가드를 따른다 (최근 log 톤보다 우선).
 - **사용자 판단이 필요한 지점은 선택지로**: 그룹 포함 여부·언어·분리 방식처럼 사용자가 결정해야 하는 분기는 열린 질문으로 묻지 말고, 그 시점에 사용 가능한 선택형 상호작용 도구를 적극 활용해 서로 구분되는 선택지를 제시하고 고르게 한다. 정해진 기본값이 있으면 먼저 적용하고 애매할 때만 묻는다.
-- **commit 명령은 `CLAUDE_SKILL_COMMIT=1` prefix 로 실행** (절차 5 참고) — 가드 hook 을 통과하기 위한 sentinel.
+- **commit 명령은 `CLAUDE_SKILL_COMMIT=1` prefix 로 실행** (절차 6 참고) — 가드 hook 을 통과하기 위한 sentinel.
 
 ## 절차
 
@@ -28,12 +28,13 @@ argument-hint: '[<target>]'
    - 새 파일이거나 파일 전체가 한 의도면 `git add <file>`.
    - 한 파일에 여러 의도가 섞여 hunk 를 갈라야 하면 `git diff <file>` 출력에서 **포함할 `@@` 블록만 남긴 패치**를 만들어 `git apply --cached <patch>` 로 적용한다. (`printf 'y\n...' | git add -p` 의 고정 응답 시퀀스는 쓰지 않는다 — `git add -p` 의 프롬프트 수/종류는 상황에 따라 달라져, 고정 응답이 어긋나면 조용히 틀린 hunk 가 staged 된다.)
 4. `git diff --cached` 로 staged 내용을 hunk 단위로 검증한다 (`--stat` 은 파일 단위라 hunk 단위 오류를 못 잡는다). 의도와 다르면 `git reset HEAD` 후 재시도.
-5. `CLAUDE_SKILL_COMMIT=1 git commit -m "..."` 으로 commit. **`CLAUDE_SKILL_COMMIT=1` prefix 는 이 플러그인 가드 hook 을 통과하기 위한 필수 sentinel** — 빼면 자신의 commit 이 차단된다.
-6. Commit 후 `git status` 로 잔여 변경 확인. 남았다면 추가 commit 을 진행할지 여기서 마칠지 선택지로 물어본다.
+5. **메시지 언어 결정**: `git log --oneline -20` 에서 머지 커밋·PR 제목 줄을 빼고 언어별로 세어 다수 언어를 고른다 (혼재면 더 최근 다수, 그래도 모호하면 선택지로 묻는다). 감지한 언어를 한 줄로 밝힌 뒤 그 언어로 쓴다 — 세션·전역의 대화 언어 지시는 여기에 적용하지 않는다 (메시지 스타일의 언어 규칙 우선).
+6. `CLAUDE_SKILL_COMMIT=1 git commit -m "..."` 으로 commit. **`CLAUDE_SKILL_COMMIT=1` prefix 는 이 플러그인 가드 hook 을 통과하기 위한 필수 sentinel** — 빼면 자신의 commit 이 차단된다.
+7. Commit 후 `git status` 로 잔여 변경 확인. 남았다면 추가 commit 을 진행할지 여기서 마칠지 선택지로 물어본다.
 
 ## 메시지 스타일
 
-**언어**: `git log --oneline -20` 의 기존 commit 다수가 쓰는 언어로 작성한다 (한국어 레포면 한국어, 영어 레포면 영어). 혼재 시 더 최근 다수를 따르고, 판단이 안 서면 어떤 언어로 쓸지 선택지로 물어본다. 톤도 참고하되 아래 가드가 우선한다 — 최근 commit이 모두 AI-스러운 톤이면 모방 루프가 만들어지므로 가드로 끊는다.
+**언어**: 커밋 메시지 언어는 저장소의 기존 commit 만으로 결정한다 — 절차 5 에서 세어 정한다 (한국어 레포면 한국어, 영어 레포면 영어). 세션·전역의 "~로 응답하라", "모든 설명·주석·communication 을 ~로" 같은 대화 언어 지시보다 이 규칙이 우선한다 — 커밋 메시지는 사용자에게 보내는 답변이 아니라 저장소 산출물이기 때문이다 (대화는 사용자 언어로, 커밋은 레포 언어로). 톤도 참고하되 아래 가드가 우선한다 — 최근 commit이 모두 AI-스러운 톤이면 모방 루프가 만들어지므로 가드로 끊는다.
 
 언어 무관 가드:
 
