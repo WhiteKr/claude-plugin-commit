@@ -22,19 +22,20 @@ argument-hint: '[<target>]'
 
 ## 절차
 
-1. `git status` / `git diff` / `git log --oneline -10` 를 병렬 실행. 단, `$ARGUMENTS` 가 경로(실재하는 파일/디렉토리, 또는 명백한 경로/glob 형태)로 판단되면 `git status` 와 `git diff` 를 그 경로로 스코프한다 (`git status -- <path>`, `git diff -- <path>`) — 무관한 변경의 diff 가 컨텍스트에 실리지 않게 한다.
+1. `git status` / `git diff` / `git log --oneline -10` 를 병렬 실행. 단, `$ARGUMENTS` 가 경로(실재하는 파일/디렉토리, 또는 명백한 경로/glob 형태)로 판단되면 `git status` 와 `git diff` 를 그 경로로 스코프한다 (`git status -- <path>`, `git diff -- <path>`) — 무관한 변경의 diff 가 컨텍스트에 실리지 않게 한다. `git status` 에 **이미 staged 된 변경**("커밋할 변경 사항"/"Changes to be committed")이 있으면 깨끗한 index 에서 시작하기 위해 먼저 처리한다 — 그것이 이번 commit 의도에 속하면 그대로 두고, 아니면 `git reset HEAD` 로 비운다 (남겨두면 절차 4 의 잔여 교차 확인을 통과하면서도 의도 외 변경이 조용히 섞인다).
 2. tracked 변경의 `git diff` hunk 들과 `git status` 의 untracked 파일을 의도 기준으로 그룹핑. `$ARGUMENTS` 가 경로면 절차 1 에서 이미 그 경로로 스코프됐으므로 스코프된 변경만 그룹핑한다. 경로가 아닌 자연어 기술이면 그것을 이번 commit 대상의 기술로 보고 부합하는 그룹(들)을 골라 진행한다 (어느 그룹을 가리키는지 모호하면 선택지로 확인). 인자가 없으면 각 그룹 요약을 선택지로 제시하고 이번 commit 에 포함할 그룹을 사용자가 고르게 한다 (여러 그룹 동시 선택 가능).
 3. 선택된 그룹을 staging:
    - 새 파일이거나 파일 전체가 한 의도면 `git add <file>`.
    - 한 파일에 여러 의도가 섞여 hunk 를 갈라야 하면 `git diff <file>` 출력에서 **포함할 `@@` 블록만 남긴 패치**를 만들어, 먼저 `git apply --cached --check <patch>` 로 깨끗이 적용되는지 확인한 뒤 `git apply --cached <patch>` 로 적용한다. (`printf 'y\n...' | git add -p` 의 고정 응답 시퀀스는 쓰지 않는다 — `git add -p` 의 프롬프트 수/종류는 상황에 따라 달라져, 고정 응답이 어긋나면 조용히 틀린 hunk 가 staged 된다.)
-4. **staged 검증 (commit 전 필수 게이트)**: `git diff --cached` 로 staged 내용을 **hunk 단위**로 확인하고 (`--stat` 은 파일 단위라 hunk 단위 오류를 못 잡는다), 이번 commit 으로 정한 그룹과 정확히 일치하는지 양방향으로 대조한다:
-   - **누락 없음**: 넣기로 한 hunk 가 모두 staged 되었는가.
-   - **혼입 없음**: 의도하지 않은 hunk 가 섞이지 않았는가 — 다른 그룹의 변경, 또는 패치 라인 오프셋이 어긋나 딸려온 인접 hunk 가 staged 되지 않았는지 본다.
-   - **잔여 교차 확인**: `git diff` (unstaged 잔여) 에 이번에 빼기로 한 변경만 남아 있는가 — staged + 잔여를 합치면 전체 변경과 맞아야 한다.
+4. **staged 검증 (commit 전 필수 게이트)**: `git diff --cached` 로 staged 내용을 **hunk 단위**로 확인한다 (`--stat` 은 파일 단위라 hunk 단위 오류를 못 잡는다). 대조 기준은 *기억 속 의도*가 아니라 *절차 3 에서 담기로 한 구체적 산출물* 이다 — hunk-split 이면 적용한 패치(`@@` 블록 모음), file-level 이면 그 파일의 절차 1 diff 전체. `git apply --cached` 가 오프셋 어긋남으로 엉뚱한 hunk 를 담은 경우 기억과 대조하면 그 오류째로 통과시키게 되므로, 반드시 그 산출물과 줄 단위로 맞춘다:
+   - **일치**: staged 의 모든 hunk 가 그 산출물과 줄 단위로 같은가 — 누락된 `@@` 블록도, 딸려온 인접 hunk 도 없는가.
+   - **잔여 교차 확인**: `git diff` (unstaged 잔여) 에 이번에 빼기로 한 변경만 남아 있는가 — staged + 잔여를 합치면 절차 1 의 전체 변경과 맞아야 한다.
+   - **선(先)staged 점검**: 절차 1 에서 이미 staged 돼 있던 변경이 이번 그룹 소속이 아닌데 섞여 있지 않은가.
+   - **비어 있지 않음**: staged 가 비어 있으면 commit 하지 않는다 — 그룹이 0 hunk 로 풀린 것이니 절차 2 로 돌아간다.
    - 하나라도 어긋나면 `git reset HEAD` 로 되돌리고 절차 3 부터 다시 staging 한다. **이 검증을 통과하기 전에는 절차 6 (commit) 으로 넘어가지 않는다.**
-5. **메시지 언어 결정**: `git log --oneline -20` 에서 머지 커밋·PR 제목 줄을 빼고 언어별로 세어 다수 언어를 고른다 (혼재면 더 최근 다수, 그래도 모호하면 선택지로 묻는다). 감지한 언어를 한 줄로 밝힌 뒤 그 언어로 쓴다 — 세션·전역의 대화 언어 지시는 여기에 적용하지 않는다 (메시지 스타일의 언어 규칙 우선).
-6. **절차 4 의 staged 검증을 통과한 뒤에만** `CLAUDE_SKILL_COMMIT=1 git commit -m "..."` 으로 commit. **`CLAUDE_SKILL_COMMIT=1` prefix 는 이 플러그인 가드 hook 을 통과하기 위한 필수 sentinel** — 빼면 자신의 commit 이 차단된다.
-7. Commit 후 `git status` 로 잔여 변경 확인. 남았다면 추가 commit 을 진행할지 여기서 마칠지 선택지로 물어본다.
+5. **메시지 언어 결정**: `git log --oneline -20` 에서 머지 커밋·PR 제목 줄을 빼고 언어별로 세어 다수 언어를 고른다 (혼재면 더 최근 다수, 그래도 모호하면 선택지로 묻는다). 감지한 언어를 한 줄로 밝힌 뒤 그 언어로 쓴다 — 세션·전역의 대화 언어 지시는 여기에 적용하지 않는다 (메시지 스타일의 언어 규칙 우선). 초안을 적은 뒤 commit 직전에 아래 «메시지 스타일» 의 언어무관 가드(자기완결성 / 구현디테일 배제 / body 미사용 / ASCII 기호) 로 한 번 점검하고, 어기면 고쳐 쓴다.
+6. **절차 4 의 staged 검증을 통과한 뒤에만** `CLAUDE_SKILL_COMMIT=1 git commit -m "..."` 으로 commit. **`CLAUDE_SKILL_COMMIT=1` prefix 는 이 플러그인 가드 hook 을 통과하기 위한 필수 sentinel** — 빼면 자신의 commit 이 차단된다. 차단(deny) 메시지가 떴다면 prefix 를 빠뜨린 것이므로, 스킬을 중단하거나 사용자에게 되묻지 말고 prefix 를 붙여 같은 commit 을 그대로 재실행한다.
+7. Commit 직후 `git show --stat HEAD` (의심되면 `git show HEAD`) 로 방금 commit 이 의도한 파일/hunk 만 담았고 메시지가 제대로 들어갔는지 확인한다. 이어 `git status` 로 잔여 변경을 보고, 남았다면 추가 commit 을 진행할지 여기서 마칠지 선택지로 물어본다.
 
 ## 메시지 스타일
 
