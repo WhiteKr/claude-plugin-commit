@@ -1,12 +1,12 @@
 {
   "name": "commit",
   "version": "0.5.0",
-  "description": "Atomic, hunk-level git commits — one commit per intent, with message guards that follow your repository's existing language and conventions",
+  "description": "git commit 작성 규칙 — 커밋당 변경 하나, 저장소 관습을 따르는 메시지",
   "author": {
     "name": "WhiteKr",
     "email": "white_kr@icloud.com"
   },
   "license": "MIT",
   "repository": "https://github.com/WhiteKr/claude-plugin-commit.git",
-  "keywords": ["git", "commit", "hunk", "staging"]
+  "keywords": ["git", "commit", "conventions"]
 }
