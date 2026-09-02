@@ -1,6 +1,6 @@
 {
   "name": "commit",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "git commit 작성 규칙 — 커밋당 변경 하나, 저장소 관습을 따르는 메시지",
   "author": {
     "name": "WhiteKr",
