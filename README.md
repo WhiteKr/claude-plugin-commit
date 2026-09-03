@@ -12,10 +12,10 @@ git commit 작성 규칙 스킬. 커밋 하나에 자기완결적인 변경 하�
 ## 사용
 
 ```
-/commit [<target>]
+/commit [<target>] [--push]
 ```
 
-`/commit` 또는 "커밋해줘" 같은 지시에 스킬이 로드된다. `<target>` 으로 커밋 대상을 지정할 수 있다.
+`/commit` 또는 "커밋해줘" 같은 지시에 스킬이 로드된다. `<target>` 으로 커밋 대상을 지정할 수 있다. `--push` 를 붙이면 커밋 후 push까지 한다(상류가 없으면 `-u origin HEAD`).
 
 ## 규칙
 
