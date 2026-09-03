@@ -14,7 +14,7 @@ argument-hint: '[<target>] [--push]'
 2. 무관한 변경이 섞여 있으면 부분 스테이징(`git add -p` 또는 `git apply --cached`)으로 나눈다.
 3. 지시받지 않은 기존 변경이 섞여 있으면 함께 커밋하지 말고 보고한다.
 4. `git diff --cached` 로 스테이징 내용을 확인한 뒤 커밋한다.
-5. `--push` 가 있으면 커밋 후 `git push` 한다. 상류가 없으면 `git push -u origin HEAD` 를 쓴다. push가 실패하면 원인을 보고하고 재시도하지 않는다.
+5. `--push` 가 있으면 커밋 후 `git push` 한다. 상류가 없으면 원격이 하나뿐일 때만 그 원격으로 `git push -u <remote> HEAD` 하고, 여럿이면 어디로 보낼지 묻는다. push가 실패하면 원인을 보고하고 재시도하지 않는다.
 
 ## 메시지
 
